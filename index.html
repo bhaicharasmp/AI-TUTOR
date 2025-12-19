@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Class 9 AI Tutor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
+    header { background:#1e88e5; color:white; padding:15px; text-align:center; font-size:22px; }
+    .container { padding:20px; }
+    .subjects { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:15px; }
+    .card {
+      background:white; padding:20px; text-align:center;
+      border-radius:8px; cursor:pointer; font-weight:bold;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card:hover { background:#e3f2fd; }
+    .messages {
+      border:1px solid #ccc; height:220px; padding:10px;
+      overflow-y:auto; background:white; margin-top:10px;
+    }
+    .bot { color:#1e88e5; margin-bottom:6px; }
+    .user { text-align:right; margin-bottom:6px; }
+    input { width:55%; padding:8px; margin-top:8px; }
+    button {
+      padding:8px 10px; background:#1e88e5;
+      color:white; border:none; cursor:pointer; margin-left:4px;
+    }
+    img { max-width:100%; margin-top:10px; border-radius:6px; }
+    footer { margin-top:20px; text-align:center; color:gray; font-size:14px; }
+  </style>
+</head>
+
+<body>
+
+<header>📘 AI Tutor</header>
+
+<div class="container">
+
+<h3>Select Subject</h3>
+<div class="subjects">
+  <div class="card" onclick="selectSubject('Mathematics')">📐 Mathematics</div>
+  <div class="card" onclick="selectSubject('Science')">🔬 Science</div>
+  <div class="card" onclick="selectSubject('English')">📖 English</div>
+  <div class="card" onclick="selectSubject('Social Science')">🌍 Social Science</div>
+</div>
+
+<p><b>Selected Subject:</b> <span id="selectedSubject">None</span></p>
+
+<h3>AI Tutor Chat</h3>
+<div class="messages" id="chatBox">
+  <div class="bot">AI Tutor: Select a subject and ask your question.</div>
+</div>
+
+<input type="text" id="userInput" placeholder="Type or speak your question">
+<button onclick="sendMessage()">Send</button>
+<button onclick="startVoice()">🎙️</button>
+<button onclick="stopSpeech()">⏹️ Stop</button>
+
+<p><b>Upload Image (Doubt Solving):</b></p>
+<input type="file" accept="image/*" onchange="uploadImage(event)">
+<div id="imagePreview"></div>
+
+</div>
+
+<footer>
+  Class 9 School Project | Web-Based AI Learning System
+</footer>
+
+<script>
+let subject = "";
+
+// SUBJECT SELECTION
+function selectSubject(sub) {
+  subject = sub;
+  document.getElementById("selectedSubject").innerText = sub;
+}
+
+// SEND MESSAGE (ONLINE SEARCH)
+async function sendMessage() {
+  let input = document.getElementById("userInput");
+  let chatBox = document.getElementById("chatBox");
+  let question = input.value.trim();
+
+  if (question === "") return;
+
+  chatBox.innerHTML += `<div class='user'>${question}</div>`;
+  chatBox.innerHTML += `<div class='bot'>AI Tutor: Searching online...</div>`;
+
+  try {
+    let searchUrl =
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(question)}&format=json&origin=*`;
+
+    let searchRes = await fetch(searchUrl);
+    let searchData = await searchRes.json();
+
+    if (!searchData.query.search.length) throw "No result";
+
+    let title = searchData.query.search[0].title;
+
+    let summaryUrl =
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+
+    let summaryRes = await fetch(summaryUrl);
+    let summaryData = await summaryRes.json();
+
+    let answer = summaryData.extract || "No summary available.";
+
+    chatBox.innerHTML += `<div class='bot'>AI Tutor: ${answer}</div>`;
+    speak(answer);
+
+  } catch {
+    chatBox.innerHTML += `<div class='bot'>AI Tutor: Sorry, I could not find an online answer.</div>`;
+  }
+
+  input.value = "";
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// 🎙️ VOICE INPUT (FIXED)
+function startVoice() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Voice input not supported. Use Chrome or Edge.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-IN";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.start();
+
+  recognition.onresult = function (event) {
+    document.getElementById("userInput").value =
+      event.results[0][0].transcript;
+  };
+
+  recognition.onerror = function (event) {
+    alert("Voice input error: " + event.error);
+  };
+}
+
+// 🔊 TEXT TO SPEECH
+function speak(text) {
+  window.speechSynthesis.cancel();
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-IN";
+  window.speechSynthesis.speak(msg);
+}
+
+// ⏹️ STOP SPEECH
+function stopSpeech() {
+  window.speechSynthesis.cancel();
+}
+
+// 🖼️ IMAGE UPLOAD (DEMO)
+function uploadImage(event) {
+  let file = event.target.files[0];
+  let preview = document.getElementById("imagePreview");
+  let chatBox = document.getElementById("chatBox");
+
+  if (file) {
+    let img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    preview.innerHTML = "";
+    preview.appendChild(img);
+
+    let reply = "Image received. Online image-based solving requires advanced AI services.";
+    chatBox.innerHTML += `<div class='bot'>AI Tutor: ${reply}</div>`;
+    speak(reply);
+  }
+}
+</script>
+
+</body>
+</html>
