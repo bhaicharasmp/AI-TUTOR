@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Class 9 AI Tutor</title>
+  <title>AI Tutor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
@@ -21,11 +21,12 @@
     }
     .bot { color:#1e88e5; margin-bottom:6px; }
     .user { text-align:right; margin-bottom:6px; }
-    input { width:55%; padding:8px; margin-top:8px; }
+    input { width:52%; padding:8px; margin-top:8px; }
     button {
       padding:8px 10px; background:#1e88e5;
       color:white; border:none; cursor:pointer; margin-left:4px;
     }
+    .danger { background:#e53935; }
     img { max-width:100%; margin-top:10px; border-radius:6px; }
     footer { margin-top:20px; text-align:center; color:gray; font-size:14px; }
   </style>
@@ -56,24 +57,33 @@
 <button onclick="sendMessage()">Send</button>
 <button onclick="startVoice()">🎙️</button>
 <button onclick="stopSpeech()">⏹️ Stop</button>
+<button class="danger" onclick="clearChat()">🧹 Clear</button>
 
-<p><b>Upload Image (Doubt Solving):</b></p>
+<p><b>Image Doubt Solver:</b></p>
 <input type="file" accept="image/*" onchange="uploadImage(event)">
 <div id="imagePreview"></div>
 
 </div>
 
 <footer>
-  Class 9 School Project | Web-Based AI Learning System
+  School Project | Web-Based AI Learning System
 </footer>
 
 <script>
 let subject = "";
+let imageUploaded = false;
 
 // SUBJECT SELECTION
 function selectSubject(sub) {
   subject = sub;
   document.getElementById("selectedSubject").innerText = sub;
+}
+
+// CLEAR CHAT
+function clearChat() {
+  document.getElementById("chatBox").innerHTML =
+    "<div class='bot'>AI Tutor: Chat cleared. Ask a new question.</div>";
+  window.speechSynthesis.cancel();
 }
 
 // SEND MESSAGE (ONLINE SEARCH)
@@ -117,7 +127,7 @@ async function sendMessage() {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 🎙️ VOICE INPUT (FIXED)
+// 🎙️ VOICE INPUT
 function startVoice() {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -129,18 +139,11 @@ function startVoice() {
 
   const recognition = new SpeechRecognition();
   recognition.lang = "en-IN";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
   recognition.start();
 
   recognition.onresult = function (event) {
     document.getElementById("userInput").value =
       event.results[0][0].transcript;
-  };
-
-  recognition.onerror = function (event) {
-    alert("Voice input error: " + event.error);
   };
 }
 
@@ -157,7 +160,7 @@ function stopSpeech() {
   window.speechSynthesis.cancel();
 }
 
-// 🖼️ IMAGE UPLOAD (DEMO)
+// 🖼️ IMAGE DOUBT SOLVER (PROPER DEMO)
 function uploadImage(event) {
   let file = event.target.files[0];
   let preview = document.getElementById("imagePreview");
@@ -169,7 +172,10 @@ function uploadImage(event) {
     preview.innerHTML = "";
     preview.appendChild(img);
 
-    let reply = "Image received. Online image-based solving requires advanced AI services.";
+    imageUploaded = true;
+
+    let reply =
+      "Image received. Please type a short description of the question shown in the image.";
     chatBox.innerHTML += `<div class='bot'>AI Tutor: ${reply}</div>`;
     speak(reply);
   }
